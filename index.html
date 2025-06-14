@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+    <meta charset="UTF-8">
+    <title>智慧旅遊平台</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <h1>智慧旅遊推薦平台</h1>
+    <div class="input-section">
+        <label for="location">輸入目前地點：</label>
+        <input type="text" id="location" placeholder="例如：台北車站">
+        <button onclick="search()">搜尋推薦</button>
+    </div>
+
+    <div id="results">
+        <h2>推薦結果</h2>
+        <div class="section" id="hotels">🏨 旅宿推薦</div>
+        <div class="section" id="spots">📍 景點推薦</div>
+        <div class="section" id="foods">🍜 美食推薦</div>
+        <div class="section" id="transport">🚌 交通資訊</div>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>
+
