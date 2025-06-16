@@ -29,13 +29,13 @@ function detectCity(locationText) {
 async function search() {
     const location = document.getElementById("location").value;
     if (!location) {
-        alert("請輸入地點！");
+        alert("請選擇地點！");
         return;
     }
 
     const cityCode = detectCity(location);
     if (!cityCode) {
-        alert("無法判斷地點所屬城市，請輸入如 台北/高雄...");
+        alert("無法判斷地點所屬城市，請重新選擇");
         return;
     }
 
@@ -50,6 +50,7 @@ async function search() {
         console.error(err);
     }
 }
+
 
 async function getTDXToken() {
     const client_id = "sssun-09d597db-5ec8-446e";
@@ -71,10 +72,18 @@ async function getTDXToken() {
     const data = await response.json();
     return data.access_token;
 }
-
+function parseGrade(gradeStr) {
+    if (!gradeStr) return 0;
+    if (gradeStr.includes("五")) return 5;
+    if (gradeStr.includes("四")) return 4;
+    if (gradeStr.includes("三")) return 3;
+    if (gradeStr.includes("二")) return 2;
+    if (gradeStr.includes("一")) return 1;
+    return 0; // 無評級或非標準格式
+}
 async function fetchNearbyHotels(cityCode, location, token) {
     try {
-        const url = `https://tdx.transportdata.tw/api/basic/v2/Tourism/Hotel/${cityCode}?$top=100&$format=JSON`;
+        const url = `https://tdx.transportdata.tw/api/basic/v2/Tourism/Hotel/${cityCode}?%24format=JSON`;
         const response = await fetch(url, {
             headers: {
                 authorization: "Bearer " + token
@@ -84,18 +93,24 @@ async function fetchNearbyHotels(cityCode, location, token) {
         if (!response.ok) throw new Error("無法取得旅宿資料");
 
         const data = await response.json();
-        const filtered = data.filter(hotel => hotel.Address && hotel.Address.includes(location)).slice(0, 5);
 
-        let html = `🏨 ${location} 旅宿推薦：<br>`;
-        if (filtered.length === 0) {
+        const sorted = data.sort((a, b) => parseGrade(b.Grade) - parseGrade(a.Grade)).slice(0, 10);
+
+        let html = `🏨 ${location} 旅宿推薦（依星等排序）：<br>`;
+        if (sorted.length === 0) {
             html += "未找到相關旅宿資料";
         } else {
-            for (const hotel of filtered) {
+            for (const hotel of sorted) {
                 html += `▶ ${hotel.HotelName || "無名稱"}<br>`;
                 html += `　📍 地址：${hotel.Address}<br>`;
+                if (hotel.Grade) {
+                    html += `　⭐ 星級：${hotel.Grade}<br>`;
+                }
                 if (hotel.Phone) html += `　☎ 電話：${hotel.Phone}<br>`;
+                html += `<br>`;
             }
         }
+
         document.getElementById("hotels").innerHTML = html;
 
     } catch (err) {
@@ -103,6 +118,11 @@ async function fetchNearbyHotels(cityCode, location, token) {
         document.getElementById("hotels").innerHTML = "🚧 無法取得旅宿資料";
     }
 }
+
+
+
+
+
 
 async function fetchBusRealtime(cityCode, token) {
     try {
