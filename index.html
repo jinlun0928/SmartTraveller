@@ -63,11 +63,26 @@
         </div>
     </div>
 
+    <div id="hotelFilterContainer" style="display: none;">
+        <h3>旅宿類別篩選</h3>
+        <div class="filter-section">
+            <label for="hotelCategoryFilter">選擇類別：</label>
+            <select id="hotelCategoryFilter">
+                <option value="">全部類別</option>
+            </select>
+            <button onclick="applyHotelFilter()">套用篩選</button>
+            <button onclick="clearHotelFilter()">清除篩選</button>
+        </div>
+    </div>
+
     <!-- 景點顯示區域 -->
     <div class="spots-grid" id="spotsContainer"></div>
 
     <!-- 美食顯示區域 -->
     <div class="foods-grid" id="foodsContainer"></div>
+
+    <!-- 旅宿顯示區域 -->
+    <div class="spots-grid" id="hotelsContainer"></div>
 
     <!-- 詳細資訊彈窗 -->
     <div id="detailModal" class="detail-modal">
