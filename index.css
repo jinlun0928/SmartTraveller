@@ -130,7 +130,7 @@ button:hover {
     box-shadow: 0 2px 4px rgba(0,0,0,0.1);
     overflow: hidden;
     transition: transform 0.2s;
-    height: 400px; /* 固定高度 */
+    height: 400px;
     display: flex;
     flex-direction: column;
     cursor: pointer;
@@ -145,7 +145,6 @@ button:hover {
     width: 100%;
     height: 200px;
     overflow: hidden;
-    flex-shrink: 0;
 }
 
 .spot-image img {
@@ -164,7 +163,7 @@ button:hover {
     flex: 1;
     display: flex;
     flex-direction: column;
-    overflow: hidden;
+    background: white;
 }
 
 .spot-info h3 {
@@ -182,13 +181,6 @@ button:hover {
     color: #666;
     font-size: 0.9em;
     line-height: 1.4;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-}
-
-.spot-info strong {
-    color: #444;
 }
 
 .spot-info .description {
@@ -199,6 +191,7 @@ button:hover {
     -webkit-box-orient: vertical;
     white-space: normal;
     margin-top: auto;
+    color: #666;
 }
 
 /* 美食網格樣式 */
@@ -290,64 +283,77 @@ button:hover {
 .detail-modal {
     display: none;
     position: fixed;
-    z-index: 1000;
-    left: 0;
     top: 0;
+    left: 0;
     width: 100%;
     height: 100%;
-    background-color: rgba(0,0,0,0.5);
+    background-color: rgba(0,0,0,0.7);
+    z-index: 1000;
+    display: flex;
+    justify-content: center;
+    align-items: center;
 }
 
 .modal-content {
-    background-color: white;
-    margin: 5% auto;
-    padding: 20px;
-    border-radius: 10px;
-    width: 80%;
-    max-width: 600px;
-    max-height: 80vh;
-    overflow-y: auto;
     position: relative;
-}
-
-.close {
-    color: #aaa;
-    float: right;
-    font-size: 28px;
-    font-weight: bold;
-    cursor: pointer;
-    position: absolute;
-    right: 20px;
-    top: 10px;
-}
-
-.close:hover,
-.close:focus {
-    color: #000;
-    text-decoration: none;
+    background-color: #fff;
+    padding: 20px;
+    width: 80%;
+    max-width: 800px;
+    border-radius: 8px;
+    max-height: 90vh;
+    overflow-y: auto;
+    margin: 0;
+    transform: translateY(0);
 }
 
 .modal-image {
     width: 100%;
-    height: 300px;
+    height: 400px;
+    overflow: hidden;
+    margin-bottom: 20px;
+}
+
+.modal-image img {
+    width: 100%;
+    height: 100%;
     object-fit: cover;
-    border-radius: 8px;
-    margin-bottom: 15px;
+}
+
+.modal-info {
+    padding: 0 20px;
 }
 
 .modal-info h2 {
+    margin: 0 0 15px 0;
     color: #333;
-    margin-bottom: 15px;
 }
 
 .modal-info p {
-    margin: 8px 0;
+    margin: 10px 0;
     color: #666;
     line-height: 1.6;
 }
 
 .modal-info strong {
     color: #444;
+}
+
+.close {
+    position: absolute;
+    right: 20px;
+    top: 10px;
+    color: #aaa;
+    font-size: 28px;
+    font-weight: bold;
+    cursor: pointer;
+    z-index: 1001;
+}
+
+.close:hover,
+.close:focus {
+    color: #000;
+    text-decoration: none;
 }
 
 /* 響應式設計 */

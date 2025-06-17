@@ -41,6 +41,25 @@ const CITY_FOOD_ENDPOINTS = {
     "連江縣": "/Tourism/Restaurant/LienchiangCounty"
 };
 
+// 城市與旅宿 API 端點對應
+const CITY_HOTEL_ENDPOINTS = {
+    "台北市": "/Tourism/Hotel/Taipei",
+    "新北市": "/Tourism/Hotel/NewTaipei",
+    "桃園市": "/Tourism/Hotel/Taoyuan",
+    "台中市": "/Tourism/Hotel/Taichung",
+    "台南市": "/Tourism/Hotel/Tainan",
+    "高雄市": "/Tourism/Hotel/Kaohsiung",
+    "基隆市": "/Tourism/Hotel/Keelung",
+    "新竹市": "/Tourism/Hotel/Hsinchu",
+    "嘉義市": "/Tourism/Hotel/Chiayi",
+    "宜蘭縣": "/Tourism/Hotel/YilanCounty",
+    "花蓮縣": "/Tourism/Hotel/HualienCounty",
+    "台東縣": "/Tourism/Hotel/TaitungCounty",
+    "澎湖縣": "/Tourism/Hotel/PenghuCounty",
+    "金門縣": "/Tourism/Hotel/KinmenCounty",
+    "連江縣": "/Tourism/Hotel/LienchiangCounty"
+};
+
 // 城市列表
 const cities = [
     "台北市",
@@ -63,6 +82,7 @@ const cities = [
 // 全域變數
 let allSpots = []; // 儲存所有景點資料
 let allFoods = []; // 儲存所有美食資料
+let allHotels = []; // 儲存所有旅宿資料
 
 // 初始化下拉選單
 function initializeDropdown() {
@@ -72,6 +92,19 @@ function initializeDropdown() {
             const selectedCity = this.value;
             if (selectedCity) {
                 console.log('選擇的城市:', selectedCity);
+            }
+        });
+    }
+
+    // 添加旅宿推薦點擊事件
+    const hotelsSection = document.getElementById('hotels');
+    if (hotelsSection) {
+        hotelsSection.addEventListener('click', function() {
+            const city = document.getElementById('location').value;
+            if (city) {
+                searchHotels();
+            } else {
+                alert('請先選擇城市');
             }
         });
     }
@@ -582,28 +615,16 @@ function showFoodDetail(food) {
 
 // 隱藏景點相關區域
 function hideSpotSections() {
-    const spotsContainer = document.getElementById('spotsContainer');
-    const categoryFilterContainer = document.getElementById('categoryFilterContainer');
-    
-    if (spotsContainer) {
-        spotsContainer.innerHTML = '';
-    }
-    if (categoryFilterContainer) {
-        categoryFilterContainer.style.display = 'none';
-    }
+    document.getElementById('categoryFilterContainer').style.display = 'none';
+    document.getElementById('spotsContainer').innerHTML = '';
+    hideHotelSections(); // 隱藏旅宿區域
 }
 
 // 隱藏美食相關區域
 function hideFoodSections() {
-    const foodsContainer = document.getElementById('foodsContainer');
-    const foodCategoryFilterContainer = document.getElementById('foodCategoryFilterContainer');
-    
-    if (foodsContainer) {
-        foodsContainer.innerHTML = '';
-    }
-    if (foodCategoryFilterContainer) {
-        foodCategoryFilterContainer.style.display = 'none';
-    }
+    document.getElementById('foodCategoryFilterContainer').style.display = 'none';
+    document.getElementById('foodsContainer').innerHTML = '';
+    hideHotelSections(); // 隱藏旅宿區域
 }
 
 // 初始化事件監聽器
@@ -677,3 +698,216 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 });
+
+async function fetchNearbyHotels(cityCode, location, token) {
+    try {
+        const url = `https://tdx.transportdata.tw/api/basic/v2/Tourism/Hotel/${cityCode}?%24format=JSON`;
+        const response = await fetch(url, {
+            headers: {
+                authorization: "Bearer " + token
+            }
+        });
+
+        if (!response.ok) throw new Error("無法取得旅宿資料");
+
+        const data = await response.json();
+        const sorted = data.sort((a, b) => parseGrade(b.Grade) - parseGrade(a.Grade)).slice(0, 5);
+
+        let html = `🏨 ${location} 旅宿推薦：<br>`;
+        if (sorted.length === 0) {
+            html += "未找到相關旅宿資料";
+        } else {
+            sorted.forEach((hotel, index) => {
+                html += `${index + 1}. ${hotel.HotelName || "無名稱"}`;
+                if (hotel.Grade) {
+                    html += ` (${hotel.Grade})`;
+                }
+                if (hotel.Address) {
+                    html += `<br>📍 ${hotel.Address}`;
+                }
+                if (hotel.Phone) {
+                    html += `<br>📞 ${hotel.Phone}`;
+                }
+                html += `<br>`;
+            });
+        }
+
+        document.getElementById("hotels").innerHTML = html;
+
+    } catch (err) {
+        console.error(err);
+        document.getElementById("hotels").innerHTML = "🚧 無法取得旅宿資料";
+    }
+}
+
+// 搜尋旅宿
+async function searchHotels() {
+    const city = document.getElementById('location').value;
+    const hotelsContainer = document.getElementById('hotelsContainer');
+    hotelsContainer.innerHTML = '<div class="loading">搜尋中...</div>';
+
+    try {
+        // 隱藏其他區域
+        hideSpotSections();
+        hideFoodSections();
+
+        const token = await getTdxToken();
+        const endpoint = CITY_HOTEL_ENDPOINTS[city];
+        
+        if (!endpoint) {
+            throw new Error('不支援的城市');
+        }
+
+        const headers = {
+            "Authorization": `Bearer ${token}`,
+            "Accept": "application/json"
+        };
+
+        const params = new URLSearchParams({
+            "$select": "HotelID,HotelName,Address,Phone,Grade,Description,Picture,UpdateTime",
+            "$top": "100"
+        });
+
+        const response = await fetch(`${TDX_API_URL}${endpoint}?${params}`, {
+            headers: headers
+        });
+
+        if (!response.ok) {
+            throw new Error('無法獲取旅宿資料');
+        }
+
+        const hotels = await response.json();
+        allHotels = hotels; // 保存所有旅宿資料
+        displayHotels(hotels);
+        setupHotelCategoryFilter(hotels); // 設置旅宿類別篩選
+    } catch (error) {
+        hotelsContainer.innerHTML = `<div class="error">錯誤: ${error.message}</div>`;
+    }
+}
+
+// 設置旅宿類別篩選
+function setupHotelCategoryFilter(hotels) {
+    const filterContainer = document.getElementById('hotelFilterContainer');
+    const categorySelect = document.getElementById('hotelCategoryFilter');
+    
+    if (!filterContainer || !categorySelect) return;
+    
+    // 收集所有星等
+    const grades = new Set();
+    hotels.forEach(hotel => {
+        if (hotel.Grade) grades.add(hotel.Grade);
+    });
+    
+    // 清空並重新填充選項
+    categorySelect.innerHTML = '<option value="">全部類別</option>';
+    Array.from(grades).sort().forEach(grade => {
+        const option = document.createElement('option');
+        option.value = grade;
+        option.textContent = `${grade}星級`;
+        categorySelect.appendChild(option);
+    });
+    
+    // 顯示篩選區域
+    filterContainer.style.display = 'block';
+}
+
+// 應用旅宿篩選
+function applyHotelFilter() {
+    const selectedGrade = document.getElementById('hotelCategoryFilter').value;
+    let filteredHotels = allHotels;
+    
+    if (selectedGrade) {
+        filteredHotels = filteredHotels.filter(hotel => hotel.Grade === selectedGrade);
+    }
+    
+    displayHotels(filteredHotels);
+}
+
+// 清除旅宿篩選
+function clearHotelFilter() {
+    document.getElementById('hotelCategoryFilter').value = '';
+    displayHotels(allHotels);
+}
+
+// 顯示旅宿列表
+function displayHotels(hotels) {
+    const hotelsContainer = document.getElementById('hotelsContainer');
+    
+    let html = '';
+    if (hotels.length === 0) {
+        html = '<div class="no-results">未找到符合條件的旅宿</div>';
+    } else {
+        hotels.forEach((hotel, index) => {
+            const pictureUrl = hotel.Picture && hotel.Picture.PictureUrl1 
+                ? hotel.Picture.PictureUrl1 
+                : 'https://via.placeholder.com/300x200?text=No+Image';
+            
+            html += `
+                <div class="spot-card" onclick="showHotelDetail(${JSON.stringify(hotel).replace(/"/g, '&quot;')})">
+                    <div class="spot-image">
+                        <img src="${pictureUrl}" alt="${hotel.HotelName || '旅宿照片'}">
+                    </div>
+                    <div class="spot-info">
+                        <h3>${hotel.HotelName || '無名稱'}</h3>
+                        ${hotel.Grade ? `<p>⭐ ${hotel.Grade}</p>` : ''}
+                        ${hotel.Address ? `<p>📍 ${hotel.Address}</p>` : ''}
+                        ${hotel.Description ? `<p class="description">${hotel.Description}</p>` : ''}
+                    </div>
+                </div>
+            `;
+        });
+    }
+
+    hotelsContainer.innerHTML = html;
+}
+
+// 顯示旅宿詳細資訊
+function showHotelDetail(hotel) {
+    const modal = document.getElementById('detailModal');
+    const modalContent = document.getElementById('modalContent');
+    const closeBtn = document.querySelector('.close');
+
+    let html = `
+        <div class="detail-content">
+            ${hotel.Picture && hotel.Picture.PictureUrl1 ? 
+                `<div class="modal-image">
+                    <img src="${hotel.Picture.PictureUrl1}" alt="${hotel.HotelName || '旅宿照片'}">
+                </div>` : ''}
+            <div class="modal-info">
+                <h2>${hotel.HotelName || '無名稱'}</h2>
+                ${hotel.Grade ? `<p>⭐ ${hotel.Grade}</p>` : ''}
+                ${hotel.Address ? `<p>📍 ${hotel.Address}</p>` : ''}
+                ${hotel.Phone ? `<p>📞 ${hotel.Phone}</p>` : ''}
+                ${hotel.Description ? `<p>${hotel.Description}</p>` : ''}
+            </div>
+        </div>
+    `;
+
+    modalContent.innerHTML = html;
+    modal.style.display = 'block';
+
+    // 關閉按鈕事件
+    closeBtn.onclick = function() {
+        modal.style.display = 'none';
+    }
+
+    // 點擊模態框外部關閉
+    window.onclick = function(event) {
+        if (event.target == modal) {
+            modal.style.display = 'none';
+        }
+    }
+}
+
+// 隱藏旅宿相關區域
+function hideHotelSections() {
+    document.getElementById('hotelFilterContainer').style.display = 'none';
+    document.getElementById('hotelsContainer').innerHTML = '';
+}
+
+// 解析星等
+function parseGrade(grade) {
+    if (!grade) return 0;
+    const match = grade.match(/\d+/);
+    return match ? parseInt(match[0]) : 0;
+}
